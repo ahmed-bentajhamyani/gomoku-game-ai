@@ -1,1 +1,1 @@
-# Gomoku-Game-AI
+# Gomoku Game AI
