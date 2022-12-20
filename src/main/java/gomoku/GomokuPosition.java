@@ -2,21 +2,34 @@ package gomoku;
 
 public class GomokuPosition extends Position {
 
-    final static public int BLANK = 0;
-    final static public int PLAYER1 = 1;
-    final static public int PLAYER2 = 2;
-    final static public int PROGRAM = -1;
-    int[][] board = new int[19][19];
+    final static public int BLANK = 0; // BLANK square.
+    final static public int PLAYER1 = 1; // Blanck stone.
+    final static public int PLAYER2 = 2; // White stone.
+    final static public int PROGRAM = -1; // White stone.
 
-    @Override
-    public String toString() {
-        StringBuffer sb = new StringBuffer("[");
-        for (int i = 0; i < 19; i++) {
-            for (int j = 0; j < 19; j++) {
-                sb.append("" + board[i][j] + ",");
+    public final static int CHESSBOARD_SIZE = 19;
+
+    int[][] board = new int[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
+
+    public GomokuPosition() {
+        setDefaultState();
+    }
+
+    public void setDefaultState() {
+        for (int i = 0; i < CHESSBOARD_SIZE; i++) {
+            for (int j = 0; j < CHESSBOARD_SIZE; j++) {
+                board[i][j] = BLANK;
             }
         }
-        sb.append("]");
-        return sb.toString();
+    }
+
+    public GomokuPosition getNewPosition() {
+        GomokuPosition pos = new GomokuPosition();
+        for (int i = 0; i < CHESSBOARD_SIZE; i++) {
+            for (int j = 0; j < CHESSBOARD_SIZE; j++) {
+                pos.board[i][j] = board[i][j];
+            }
+        }
+        return pos;
     }
 }

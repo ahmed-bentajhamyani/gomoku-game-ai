@@ -1,8 +1,9 @@
 package gomoku;
 
 import java.util.*;
+import javax.swing.JFrame;
 
-public abstract class GameSearch {
+public abstract class GameSearch extends JFrame {
 
     public static final boolean DEBUG = false;
 
@@ -32,22 +33,16 @@ public abstract class GameSearch {
 
     public abstract float positionEvaluation(Position p, boolean player);
 
-    public abstract void printPosition(Position p, boolean PlayerVsPlayer);
-
     public abstract Position[] possibleMoves(Position p, boolean player);
-
-    public abstract Position makeMove(Position p, boolean player, Move move);
 
     public abstract boolean reachedMaxDepth(Position p, int depth);
 
-    public abstract Move createMove();
+    // public abstract Move createMove();
 
     /*
      * For 2 Players:
      */
     public abstract boolean wonPosition(Position p, int player);
-
-    public abstract Position makeMove(Position p, int player, Move move);
 
     /*
      * Search utility methods:
@@ -78,8 +73,7 @@ public abstract class GameSearch {
         Position[] moves = possibleMoves(p, player);
         for (int i = 0; i < moves.length; i++) {
             Vector v2 = alphaBetaHelper(depth + 1, moves[i], !player, -beta, -alpha);
-            // System.out.println("i= " + i);
-            //  if (v2 == null || v2.size() < 1) continue;
+            //if (v2 == null || v2.size() < 1) continue;
             float value = -((Float) v2.elementAt(0)).floatValue();
             if (value > beta) {
                 if (GameSearch.DEBUG) {
@@ -112,82 +106,5 @@ public abstract class GameSearch {
             v3.addElement(enum2.nextElement());
         }
         return v3;
-    }
-
-    public void playGame(Position startingPosition) {
-        while (true) {
-            // Player 1:
-            printPosition(startingPosition, true);
-            if (wonPosition(startingPosition, PLAYER1)) {
-                System.out.println("Player 1 won");
-                break;
-            }
-            if (wonPosition(startingPosition, PLAYER2)) {
-                System.out.println("Player 2 won");
-                break;
-            }
-            if (drawnPosition(startingPosition)) {
-                System.out.println("Drawn game");
-                break;
-            }
-            System.out.println("\nPlayer 1:");
-            Move move1 = createMove();
-            startingPosition = makeMove(startingPosition, PLAYER1, move1);
-
-            // Player 2:
-            printPosition(startingPosition, true);
-            if (wonPosition(startingPosition, PLAYER1)) {
-                System.out.println("Player 1 won");
-                break;
-            }
-            if (wonPosition(startingPosition, PLAYER2)) {
-                System.out.println("Player 2 won");
-                break;
-            }
-            if (drawnPosition(startingPosition)) {
-                System.out.println("Drawn game");
-                break;
-            }
-            System.out.println("\nPlayer 2:");
-            Move move2 = createMove();
-            startingPosition = makeMove(startingPosition, PLAYER2, move2);
-        }
-    }
-
-    public void playGame(Position startingPosition, boolean humanPlayFirst) {
-        if (humanPlayFirst == false) {
-            Vector v = alphaBeta(0, startingPosition, PROGRAM);
-            startingPosition = (Position) v.elementAt(1);
-        }
-        while (true) {
-            printPosition(startingPosition, false);
-            if (wonPosition(startingPosition, PROGRAM)) {
-                System.out.println("Program won");
-                break;
-            }
-            if (wonPosition(startingPosition, HUMAN)) {
-                System.out.println("Human won");
-                break;
-            }
-            if (drawnPosition(startingPosition)) {
-                System.out.println("Drawn game");
-                break;
-            }
-            System.out.println("\nYour move:");
-            Move move = createMove();
-            startingPosition = makeMove(startingPosition, HUMAN, move);
-            printPosition(startingPosition, false);
-            Vector v = alphaBeta(0, startingPosition, PROGRAM);
-
-            Enumeration enum2 = v.elements();
-            while (enum2.hasMoreElements()) {
-                System.out.println(" next element: " + enum2.nextElement());
-            }
-            startingPosition = (Position) v.elementAt(1);
-            try {
-                System.in.read();
-            } catch (Exception e) {
-            }
-        }
     }
 }
