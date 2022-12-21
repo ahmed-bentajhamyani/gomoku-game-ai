@@ -49,15 +49,12 @@ public abstract class GameSearch extends JFrame {
      */
     protected Vector alphaBeta(int depth, Position p, boolean player) {
         Vector v = alphaBetaHelper(depth, p, player, 1000000.0f, -1000000.0f);
-        System.out.println("^^ v(0): " + v.elementAt(0) + ", v(1): " + v.elementAt(1));
+        // System.out.println("^^ v(0): " + v.elementAt(0) + ", v(1): " + v.elementAt(1));
         return v;
     }
 
     protected Vector alphaBetaHelper(int depth, Position p,
             boolean player, float alpha, float beta) {
-        if (GameSearch.DEBUG) {
-            System.out.println("alphaBetaHelper(" + depth + "," + p + "," + alpha + "," + beta + ")");
-        }
         if (reachedMaxDepth(p, depth)) {
             Vector v = new Vector(2);
             float value = positionEvaluation(p, player);
@@ -76,9 +73,6 @@ public abstract class GameSearch extends JFrame {
             //if (v2 == null || v2.size() < 1) continue;
             float value = -((Float) v2.elementAt(0)).floatValue();
             if (value > beta) {
-                if (GameSearch.DEBUG) {
-                    System.out.println(" ! ! ! value=" + value + ", beta=" + beta);
-                }
                 beta = value;
                 best = new Vector();
                 best.addElement(moves[i]);
