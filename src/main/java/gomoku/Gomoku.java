@@ -13,6 +13,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Enumeration;
 import java.util.Vector;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -24,17 +25,21 @@ import javax.swing.JRadioButton;
 
 public class Gomoku extends GameSearch {
 
-    private JLabel jblWhite = new JLabel("White: 0s");
-    private JLabel jblBlack = new JLabel("Black: 0s");
+    private int row, col;
     private final JLabel jblGomoku = new JLabel("Gomoku Game");
     private JButton jbtStart = new JButton("Start!");
+    private final JButton jbtUndo = new JButton("Undo");
+    private final JButton jbtExit = new JButton("Exit");
     private GomokuBoard gomokuboard = new GomokuBoard();
     private GomokuPosition pos = new GomokuPosition();
     private boolean gameState = false;  // to show statue of game: true for continue, false for end.
     private boolean canClick = true;
     private boolean player = true; // true for human, false for program 
     private int currentPlayer = 1; // for Player Vs Player by default Player 1 who plays first 
-    private float gameTimer = 0; // game timer
+    private float gameTimerSeconde = 0; // game time secondes
+    private float gameTimerMinute = 0; // game time minutes
+    private float gameTimerHour = 0; // game time hours
+    private JButton jbtGameTimer = new JButton("0:0:0");
 
     private final JRadioButton jrbPlayerVsProgram = new JRadioButton("Human Vs Computer", false);
     private final JRadioButton jrbPlayerVsPlayer = new JRadioButton("Human Vs Human", true);
@@ -47,7 +52,6 @@ public class Gomoku extends GameSearch {
     private int maxDepth = 2;
 
     static Thread gameTimeThread;
-    static Thread whiteTimeThread;
 
     public Gomoku() {
         setLayout(null);  // manuel layout
@@ -100,17 +104,34 @@ public class Gomoku extends GameSearch {
         level.add(jrbNormal);
         level.add(jrbHard);
 
+        // add game timer
+        jbtGameTimer.setFont(new Font("Serif", Font.BOLD, 15));
+        jbtGameTimer.setBackground(new Color(222, 184, 135));
+        add(jbtGameTimer);
+
+        // undo button
+        jbtUndo.setBackground(new Color(70, 130, 180));
+        add(jbtUndo);
+
+        // exit button
+        jbtExit.setBackground(new Color(250, 78, 78));
+        add(jbtExit);
+
+
         /* Set the position and size of each component by calling
            its setBounds() method. */
         gomokuboard.setBounds(20, 20, 460, 460);
         jblGomoku.setBounds(510, 20, 450, 30);
-        jbtStart.setBounds(510, 80, 150, 30);
-        jrbPlayerVsPlayer.setBounds(510, 120, 150, 30);
-        jrbPlayerVsProgram.setBounds(510, 150, 150, 30);
-        jblLevel.setBounds(510, 190, 150, 30);
-        jrbEasy.setBounds(510, 220, 60, 30);
-        jrbNormal.setBounds(570, 220, 70, 30);
-        jrbHard.setBounds(640, 220, 70, 30);
+        jbtStart.setBounds(510, 80, 70, 30);
+        jbtUndo.setBounds(590, 80, 70, 30);
+        jbtGameTimer.setBounds(510, 120, 150, 30);
+        jrbPlayerVsPlayer.setBounds(510, 160, 150, 30);
+        jrbPlayerVsProgram.setBounds(510, 190, 150, 30);
+        jblLevel.setBounds(510, 220, 150, 30);
+        jrbEasy.setBounds(510, 250, 60, 30);
+        jrbNormal.setBounds(570, 250, 70, 30);
+        jrbHard.setBounds(640, 250, 70, 30);
+        jbtExit.setBounds(640, 450, 100, 30);
 
         jrbPlayerVsProgram.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -119,6 +140,8 @@ public class Gomoku extends GameSearch {
                     jrbEasy.setVisible(true);
                     jrbNormal.setVisible(true);
                     jrbHard.setVisible(true);
+                    jbtUndo.setVisible(false);
+                    jbtStart.setBounds(510, 80, 150, 30);
                 }
             }
         });
@@ -130,6 +153,9 @@ public class Gomoku extends GameSearch {
                     jrbEasy.setVisible(false);
                     jrbNormal.setVisible(false);
                     jrbHard.setVisible(false);
+                    jbtUndo.setVisible(true);
+                    jbtStart.setBounds(510, 80, 70, 30);
+                    jbtUndo.setBounds(590, 80, 70, 30);
                 }
             }
         });
@@ -154,18 +180,49 @@ public class Gomoku extends GameSearch {
             }
         });
 
+        jbtUndo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                pos.board[row][col] = GomokuPosition.BLANK;
+                if (currentPlayer == 1) {
+                    currentPlayer = PLAYER2;
+                } else if (currentPlayer == 2) {
+                    currentPlayer = PLAYER1;
+                }
+                repaint();
+
+            }
+        });
+
+        jbtExit.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+
         gameTimeThread = new Thread(new Runnable() {
             public void run() {
                 try {
                     while (true) {
                         if (gameState) {
-                            gameTimer += 0.2;
-                            // jblBlack.setText("Black: " + (int) black + "s");
+                            gameTimerSeconde += 0.2;
+                            if (gameTimerSeconde < 60) {
+                                jbtGameTimer.setText((int) gameTimerHour + ":" + (int) gameTimerMinute + ":" + (int) gameTimerSeconde);
+                            } else if (gameTimerMinute < 59) {
+                                gameTimerSeconde = 0;
+                                gameTimerMinute++;
+                                jbtGameTimer.setText((int) gameTimerHour + ":" + (int) gameTimerMinute + ":" + (int) gameTimerSeconde);
+                            } else {
+                                gameTimerSeconde = 0;
+                                gameTimerMinute = 0;
+                                gameTimerHour++;
+                                jbtGameTimer.setText((int) gameTimerHour + ":" + (int) gameTimerMinute + ":" + (int) gameTimerSeconde);
+                            }
+
                         }
+
                         Thread.sleep(200);
                     }
                 } catch (InterruptedException ex) {
-
                 }
             }
         });
@@ -177,9 +234,11 @@ public class Gomoku extends GameSearch {
         gameState = false;
         player = true;
 
-        gameTimer = 0;
-        jblWhite.setText("White: 0s");
-        jblBlack.setText("Black: 0s");
+        gameTimerSeconde = 0;
+        gameTimerMinute = 0;
+        gameTimerHour = 0;
+
+        jbtGameTimer.setText("0:0:0");
 
         jbtStart.setText("Start!");
 
@@ -314,8 +373,8 @@ public class Gomoku extends GameSearch {
 
         int[] score = {10, 100, 1000};
 
-        short myStone;
-        short enemyStone;
+        int myStone;
+        int enemyStone;
         if (player) {
             myStone = GomokuPosition.PLAYER1;
             enemyStone = GomokuPosition.PROGRAM;
@@ -378,7 +437,7 @@ public class Gomoku extends GameSearch {
      */
     private int[][] connectN(Position p, boolean player, int number) {
         GomokuPosition pos = (GomokuPosition) p;
-        short b;
+        int b;
         if (player) {
             b = GomokuPosition.PLAYER1;
         } else {
@@ -568,7 +627,7 @@ public class Gomoku extends GameSearch {
         return count;
     }
 
-    private boolean downSame(Position p, int i, int j, int n, short b) {
+    private boolean downSame(Position p, int i, int j, int n, int b) {
         GomokuPosition pos = (GomokuPosition) p;
         for (int k = 0; k <= n; k++) {
             if (pos.board[i + k][j] != b) {
@@ -578,7 +637,7 @@ public class Gomoku extends GameSearch {
         return true;
     }
 
-    private boolean rightSame(Position p, int i, int j, int n, short b) {
+    private boolean rightSame(Position p, int i, int j, int n, int b) {
         GomokuPosition pos = (GomokuPosition) p;
         for (int k = 0; k <= n; k++) {
             if (pos.board[i][j + k] != b) {
@@ -588,7 +647,7 @@ public class Gomoku extends GameSearch {
         return true;
     }
 
-    private boolean rightDownSame(Position p, int i, int j, int n, short b) {
+    private boolean rightDownSame(Position p, int i, int j, int n, int b) {
         GomokuPosition pos = (GomokuPosition) p;
         for (int k = 0; k <= n; k++) {
             if (pos.board[i + k][j + k] != b) {
@@ -598,7 +657,7 @@ public class Gomoku extends GameSearch {
         return true;
     }
 
-    private boolean rightUpSame(Position p, int i, int j, int n, short b) {
+    private boolean rightUpSame(Position p, int i, int j, int n, int b) {
         GomokuPosition pos = (GomokuPosition) p;
         for (int k = 0; k <= n; k++) {
             if (pos.board[i - k][j + k] != b) {
@@ -664,9 +723,6 @@ public class Gomoku extends GameSearch {
     @Override
     public boolean reachedMaxDepth(Position p, int depth) {
         boolean ret = false;
-        if (depth >= maxDepth) {
-            return true;
-        }
         if (wonPosition(p, false)) {
             ret = true;
         } else if (wonPosition(p, true)) {
@@ -674,9 +730,8 @@ public class Gomoku extends GameSearch {
         } else if (drawnPosition(p)) {
             ret = true;
         }
-        if (GameSearch.DEBUG) {
-            System.out.println("reachedMaxDepth: pos=" + p.toString() + ", depth=" + depth
-                    + ", ret=" + ret);
+        if (depth >= maxDepth) {
+            return true;
         }
         return ret;
     }
@@ -713,8 +768,6 @@ public class Gomoku extends GameSearch {
                             if (pos.board[boardX][boardY] == GomokuPosition.BLANK) {
                                 pos.board[boardX][boardY] = GomokuPosition.PLAYER1;
                                 repaint();
-                                //black++;
-                                //jblWhite.setText("Black: " + black);
                                 if (wonPosition(pos, HUMAN)) {
                                     JOptionPane.showMessageDialog(null, "Human win!");
                                     gameState = false;
@@ -731,10 +784,12 @@ public class Gomoku extends GameSearch {
                                 Thread thread2 = new Thread(new Runnable() {
                                     public void run() {
                                         Vector v = alphaBeta(0, (Position) pos, PROGRAM);
+                                        Enumeration enum2 = v.elements();
+                                        while (enum2.hasMoreElements()) {
+                                            System.out.println(" next element: " + enum2.nextElement());
+                                        }
                                         pos = (GomokuPosition) v.elementAt(1);
                                         repaint();
-                                        //white++;
-                                        //jblBlack.setText("White: " + white);
                                         player = HUMAN;
                                         canClick = true;
                                         if (wonPosition(pos, PROGRAM)) {
@@ -762,14 +817,12 @@ public class Gomoku extends GameSearch {
                         mouseX = e.getX();
                         mouseY = e.getY();
                         if (mouseX >= xStart && mouseX <= xEnd && mouseY >= yStart && mouseY <= yEnd) {
-                            boardX = (mouseX - xStart) / widthStep;
-                            boardY = (mouseY - yStart) / heightStep;
+                            row = boardX = (mouseX - xStart) / widthStep;
+                            col = boardY = (mouseY - yStart) / heightStep;
 
                             if (pos.board[boardX][boardY] == GomokuPosition.BLANK) {
                                 pos.board[boardX][boardY] = currentPlayer;
                                 repaint();
-                                //black++;
-                                //jblWhite.setText("Black: " + black);
                                 if (wonPosition(pos, currentPlayer) && currentPlayer == 1) {
                                     JOptionPane.showMessageDialog(null, "Black win!");
                                     gameState = false;
@@ -801,13 +854,13 @@ public class Gomoku extends GameSearch {
 
             width = (int) (getWidth() * 0.98);
             height = (int) (getHeight() * 0.98);
-            widthStep = width / GomokuPosition.CHESSBOARD_SIZE;
-            heightStep = height / GomokuPosition.CHESSBOARD_SIZE;
+            widthStep = width / GomokuPosition.GOMOKUBOARD_SIZE;
+            heightStep = height / GomokuPosition.GOMOKUBOARD_SIZE;
 
             xStart = (int) (width * 0.01);
             yStart = (int) (height * 0.01);
-            xEnd = xStart + GomokuPosition.CHESSBOARD_SIZE * widthStep;
-            yEnd = yStart + GomokuPosition.CHESSBOARD_SIZE * heightStep;
+            xEnd = xStart + GomokuPosition.GOMOKUBOARD_SIZE * widthStep;
+            yEnd = yStart + GomokuPosition.GOMOKUBOARD_SIZE * heightStep;
 
             // draw GomokuBoard
             g.setColor(Color.BLACK);
@@ -815,25 +868,25 @@ public class Gomoku extends GameSearch {
             g.drawLine(xStart, yStart, xEnd, yStart);
             g.drawLine(xEnd, yStart, xEnd, yEnd);
             g.drawLine(xStart, yEnd, xEnd, yEnd);
-            for (int i = 1; i < GomokuPosition.CHESSBOARD_SIZE; i++) {
+            for (int i = 1; i < GomokuPosition.GOMOKUBOARD_SIZE; i++) {
                 g.drawLine(xStart + i * widthStep, yStart, xStart + i * widthStep, yEnd);
                 g.drawLine(xStart, yStart + i * heightStep, xEnd, yStart + i * heightStep);
             }
 
             // draw stone
-            int chessRadius = (int) (Math.min(widthStep, heightStep) * 0.9 * 0.5);
+            int gomokuRadius = (int) (Math.min(widthStep, heightStep) * 0.9 * 0.5);
             for (int i = 0; i < pos.board.length; i++) {
                 for (int j = 0; j < pos.board[0].length; j++) {
                     if (pos.board[i][j] == GomokuPosition.PLAYER1) {
                         g.setColor(Color.BLACK);
                         int xCenter = (int) (xStart + (i + 0.5) * widthStep);
                         int yCenter = (int) (yStart + (j + 0.5) * heightStep);
-                        g.fillOval(xCenter - chessRadius, yCenter - chessRadius, 2 * chessRadius, 2 * chessRadius);
+                        g.fillOval(xCenter - gomokuRadius, yCenter - gomokuRadius, 2 * gomokuRadius, 2 * gomokuRadius);
                     } else if (pos.board[i][j] == GomokuPosition.PROGRAM || pos.board[i][j] == GomokuPosition.PLAYER2) {
                         g.setColor(Color.WHITE);
                         int xCenter = (int) (xStart + (i + 0.5) * widthStep);
                         int yCenter = (int) (yStart + (j + 0.5) * heightStep);
-                        g.fillOval(xCenter - chessRadius, yCenter - chessRadius, 2 * chessRadius, 2 * chessRadius);
+                        g.fillOval(xCenter - gomokuRadius, yCenter - gomokuRadius, 2 * gomokuRadius, 2 * gomokuRadius);
                     }
                 }
             }
