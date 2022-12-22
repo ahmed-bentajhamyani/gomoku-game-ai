@@ -29,21 +29,20 @@ public class Gomoku extends GameSearch {
     private final JLabel jblGomoku = new JLabel("Gomoku Game");
     private JButton jbtStart = new JButton("Start!");
     private final JButton jbtUndo = new JButton("Undo");
+    private final JButton jbtHelp = new JButton("Help");
     private final JButton jbtExit = new JButton("Exit");
+    private JButton jbtSave = new JButton("Previous Game!");
     private GomokuBoard gomokuboard = new GomokuBoard();
     private GomokuPosition pos = new GomokuPosition();
     private boolean gameState = false;  // to show statue of game: true for continue, false for end.
     private boolean canClick = true;
     private boolean player = true; // true for human, false for program 
-    private int currentPlayer = 1; // for Player Vs Player by default Player 1 who plays first 
-    private float gameTimerSeconde = 0; // game time secondes
-    private float gameTimerMinute = 0; // game time minutes
-    private float gameTimerHour = 0; // game time hours
-    private JButton jbtGameTimer = new JButton("0:0:0");
+    private int currentPlayer = 1; // for Player Vs Player by default Player 1 who plays first
 
     private final JRadioButton jrbPlayerVsProgram = new JRadioButton("Human Vs Computer", false);
     private final JRadioButton jrbPlayerVsPlayer = new JRadioButton("Human Vs Human", true);
 
+    // levels
     private JLabel jblLevel = new JLabel("Level");
     private JRadioButton jrbEasy = new JRadioButton("Easy", false);
     private JRadioButton jrbNormal = new JRadioButton("Normal", true);
@@ -52,6 +51,10 @@ public class Gomoku extends GameSearch {
     private int maxDepth = 2;
 
     static Thread gameTimeThread;
+
+    // save
+    Save save = new Save();
+    int tab[][] = new int[GomokuPosition.GOMOKUBOARD_SIZE][GomokuPosition.GOMOKUBOARD_SIZE];
 
     public Gomoku() {
         setLayout(null);  // manuel layout
@@ -104,14 +107,17 @@ public class Gomoku extends GameSearch {
         level.add(jrbNormal);
         level.add(jrbHard);
 
-        // add game timer
-        jbtGameTimer.setFont(new Font("Serif", Font.BOLD, 15));
-        jbtGameTimer.setBackground(new Color(222, 184, 135));
-        add(jbtGameTimer);
-
         // undo button
         jbtUndo.setBackground(new Color(70, 130, 180));
         add(jbtUndo);
+
+        // help button
+        jbtHelp.setBackground(new Color(70, 130, 180));
+        add(jbtHelp);
+
+        // save button
+        jbtSave.setBackground(new Color(95, 158, 160));
+        add(jbtSave);
 
         // exit button
         jbtExit.setBackground(new Color(250, 78, 78));
@@ -122,16 +128,17 @@ public class Gomoku extends GameSearch {
            its setBounds() method. */
         gomokuboard.setBounds(20, 20, 460, 460);
         jblGomoku.setBounds(510, 20, 450, 30);
-        jbtStart.setBounds(510, 80, 70, 30);
-        jbtUndo.setBounds(590, 80, 70, 30);
-        jbtGameTimer.setBounds(510, 120, 150, 30);
+        jbtStart.setBounds(510, 80, 150, 30);
+        jbtUndo.setBounds(510, 120, 150, 30);
+        jbtHelp.setBounds(510, 120, 150, 30);
         jrbPlayerVsPlayer.setBounds(510, 160, 150, 30);
         jrbPlayerVsProgram.setBounds(510, 190, 150, 30);
         jblLevel.setBounds(510, 220, 150, 30);
         jrbEasy.setBounds(510, 250, 60, 30);
         jrbNormal.setBounds(570, 250, 70, 30);
         jrbHard.setBounds(640, 250, 70, 30);
-        jbtExit.setBounds(640, 450, 100, 30);
+        jbtSave.setBounds(510, 450, 130, 30);
+        jbtExit.setBounds(650, 450, 80, 30);
 
         jrbPlayerVsProgram.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -141,7 +148,7 @@ public class Gomoku extends GameSearch {
                     jrbNormal.setVisible(true);
                     jrbHard.setVisible(true);
                     jbtUndo.setVisible(false);
-                    jbtStart.setBounds(510, 80, 150, 30);
+                    jbtHelp.setVisible(true);
                 }
             }
         });
@@ -154,8 +161,7 @@ public class Gomoku extends GameSearch {
                     jrbNormal.setVisible(false);
                     jrbHard.setVisible(false);
                     jbtUndo.setVisible(true);
-                    jbtStart.setBounds(510, 80, 70, 30);
-                    jbtUndo.setBounds(590, 80, 70, 30);
+                    jbtHelp.setVisible(false);
                 }
             }
         });
@@ -165,6 +171,7 @@ public class Gomoku extends GameSearch {
                 if (!gameState) {
                     gameState = true;
                     jbtStart.setText("Restart");
+                    jbtSave.setText("Save Game");
 
                     if (jrbEasy.isSelected()) {
                         maxDepth = 1;
@@ -189,6 +196,92 @@ public class Gomoku extends GameSearch {
                     currentPlayer = PLAYER1;
                 }
                 repaint();
+            }
+        });
+
+        jbtHelp.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Thread thread3 = new Thread(new Runnable() {
+                    public void run() {
+                        Vector v = alphaBeta(0, (Position) pos, PROGRAM);
+                        Enumeration enum2 = v.elements();
+                        while (enum2.hasMoreElements()) {
+                            System.out.println(" next element: " + enum2.nextElement());
+                        }
+                        pos = (GomokuPosition) v.elementAt(1);
+                        for (int i = 0; i < 19; i++) {
+                            for (int j = 0; j < 19; j++) {
+                                tab[i][j] = pos.board[i][j];
+                            }
+                        }
+                        repaint();
+                        player = HUMAN;
+                        canClick = true;
+                        if (wonPosition(pos, PROGRAM)) {
+                            JOptionPane.showMessageDialog(null, "Computer win!");
+                            gameState = false;
+                            return;
+                        } else if (drawnPosition(pos)) {
+                            JOptionPane.showMessageDialog(null, "Draw game!");
+                            gameState = false;
+                            return;
+                        }
+                    }
+                });
+
+                Thread thread2 = new Thread(new Runnable() {
+                    public void run() {
+                        Vector v = alphaBeta(0, (Position) pos, HUMAN);
+                        Enumeration enum2 = v.elements();
+                        while (enum2.hasMoreElements()) {
+                            System.out.println(" next element: " + enum2.nextElement());
+                        }
+                        pos = (GomokuPosition) v.elementAt(1);
+                        for (int i = 0; i < 19; i++) {
+                            for (int j = 0; j < 19; j++) {
+                                tab[i][j] = pos.board[i][j];
+                            }
+                        }
+                        repaint();
+                        player = PROGRAM;
+                        canClick = false;
+                        if (wonPosition(pos, HUMAN)) {
+                            JOptionPane.showMessageDialog(null, "Human win!");
+                            gameState = false;
+                            return;
+                        } else if (drawnPosition(pos)) {
+                            JOptionPane.showMessageDialog(null, "Draw game!");
+                            gameState = false;
+                            return;
+                        }
+
+                        // Program turn
+                        thread3.setPriority(Thread.MAX_PRIORITY);
+                        thread3.start();
+                    }
+                });
+
+                thread2.setPriority(Thread.MAX_PRIORITY);
+                thread2.start();
+            }
+        });
+
+        jbtSave.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (jbtSave.getText().equals("Save Game")) {
+
+                    save.saveGomoko(tab);
+                    jbtSave.setText("Previous Game!");
+                    setDefaultStatue();
+                    gomokuboard.repaint();
+                } else {
+                    pos.board = save.getSavedGomoko();
+                    gameState = true;
+                    jbtStart.setText("Restart");
+                    jbtSave.setText("Save Game");
+                    repaint();
+
+                }
 
             }
         });
@@ -198,34 +291,6 @@ public class Gomoku extends GameSearch {
                 System.exit(0);
             }
         });
-
-        gameTimeThread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    while (true) {
-                        if (gameState) {
-                            gameTimerSeconde += 0.2;
-                            if (gameTimerSeconde < 60) {
-                                jbtGameTimer.setText((int) gameTimerHour + ":" + (int) gameTimerMinute + ":" + (int) gameTimerSeconde);
-                            } else if (gameTimerMinute < 59) {
-                                gameTimerSeconde = 0;
-                                gameTimerMinute++;
-                                jbtGameTimer.setText((int) gameTimerHour + ":" + (int) gameTimerMinute + ":" + (int) gameTimerSeconde);
-                            } else {
-                                gameTimerSeconde = 0;
-                                gameTimerMinute = 0;
-                                gameTimerHour++;
-                                jbtGameTimer.setText((int) gameTimerHour + ":" + (int) gameTimerMinute + ":" + (int) gameTimerSeconde);
-                            }
-
-                        }
-
-                        Thread.sleep(200);
-                    }
-                } catch (InterruptedException ex) {
-                }
-            }
-        });
     }
 
     public void setDefaultStatue() {
@@ -233,12 +298,6 @@ public class Gomoku extends GameSearch {
 
         gameState = false;
         player = true;
-
-        gameTimerSeconde = 0;
-        gameTimerMinute = 0;
-        gameTimerHour = 0;
-
-        jbtGameTimer.setText("0:0:0");
 
         jbtStart.setText("Start!");
 
@@ -256,8 +315,6 @@ public class Gomoku extends GameSearch {
                 frame.setLocationRelativeTo(null);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setVisible(true);
-
-                gameTimeThread.start();
             }
         });
     }
@@ -765,6 +822,8 @@ public class Gomoku extends GameSearch {
                             boardX = (mouseX - xStart) / widthStep;
                             boardY = (mouseY - yStart) / heightStep;
 
+                            tab[boardX][boardY] = (int) currentPlayer;
+
                             if (pos.board[boardX][boardY] == GomokuPosition.BLANK) {
                                 pos.board[boardX][boardY] = GomokuPosition.PLAYER1;
                                 repaint();
@@ -789,6 +848,11 @@ public class Gomoku extends GameSearch {
                                             System.out.println(" next element: " + enum2.nextElement());
                                         }
                                         pos = (GomokuPosition) v.elementAt(1);
+                                        for (int i = 0; i < 19; i++) {
+                                            for (int j = 0; j < 19; j++) {
+                                                tab[i][j] = pos.board[i][j];
+                                            }
+                                        }
                                         repaint();
                                         player = HUMAN;
                                         canClick = true;
@@ -819,6 +883,8 @@ public class Gomoku extends GameSearch {
                         if (mouseX >= xStart && mouseX <= xEnd && mouseY >= yStart && mouseY <= yEnd) {
                             row = boardX = (mouseX - xStart) / widthStep;
                             col = boardY = (mouseY - yStart) / heightStep;
+
+                            tab[boardX][boardY] = (int) currentPlayer;
 
                             if (pos.board[boardX][boardY] == GomokuPosition.BLANK) {
                                 pos.board[boardX][boardY] = currentPlayer;
